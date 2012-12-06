@@ -57,14 +57,28 @@ class Batman.Property
   hashKey: ->
     @hashKey = -> key
     key = "<Batman.Property base: #{Batman.Hash::hashKeyFor(@base)}, key: \"#{Batman.Hash::hashKeyFor(@key)}\">"
-  event: (key) ->
-    eventClass = @eventClass or Batman.Event
-    @events ||= {}
-    @events[key] ||= new eventClass(this, key)
-    @events[key]
-  changeEvent: ->
-    event = @event('change')
-    @changeEvent = -> event
+  event: (key, createEvent = true) ->
+    if event = @events?[key]
+      event
+    else
+      ancestors = @base._batman?.ancestors()
+      if ancestors
+        for ancestor in @base._batman?.ancestors()
+          existingEvent = ancestor._batman?.properties?.get(this.key)?.events?[key]
+          break if existingEvent
+
+      if createEvent || existingEvent?.oneShot
+        @events ||= {}
+        eventClass = @eventClass or Batman.Event
+        @events[key] = new eventClass(this, key)
+        @events[key].oneShot = existingEvent?.oneShot
+        @events[key]
+      else
+        existingEvent
+
+  changeEvent: (createEvent = true) ->
+    if event = @event('change', createEvent)
+      @changeEvent = -> event
     event
   accessor: ->
     accessor = @constructor.accessorForBaseAndKey(@base, @key)
@@ -72,13 +86,14 @@ class Batman.Property
     accessor
   eachObserver: (iterator) ->
     key = @key
-    iterator(object) for object in @changeEvent().handlers.slice()
+    handlers = @changeEvent(false)?.handlers?.slice()
+    iterator(object) for object in handlers if handlers
     if @base.isObservable
       for ancestor in @base._batman.ancestors()
         if ancestor.isObservable and ancestor.hasProperty(key)
           property = ancestor.property(key)
-          handlers = property.changeEvent().handlers
-          iterator(object) for object in handlers.slice()
+          handlers = property.changeEvent(false)?.handlers
+          iterator(object) for object in handlers?.slice() if handlers
   observers: ->
     results = []
     @eachObserver (observer) -> results.push(observer)
@@ -191,7 +206,7 @@ class Batman.Property
     @base._batman?.properties?.unset(@key)
     @isDead = true
 
-  fire: -> @changeEvent().fire(arguments..., @key)
+  fire: -> @changeEvent(false)?.fireWithContext(@base, arguments..., @key)
 
   isolate: ->
     if @_isolationCount is 0

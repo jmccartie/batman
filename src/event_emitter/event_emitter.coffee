@@ -6,15 +6,15 @@ Batman.EventEmitter =
     @_batman?.get?('events')?.hasOwnProperty(key)
   event: (key, createEvent = true) ->
     Batman.initializeObject this
-    eventClass = @eventClass or Batman.Event
     if @_batman.events?.hasOwnProperty(key)
-      existingEvent = @_batman.events[key]
+      @_batman.events[key]
     else
       for ancestor in @_batman.ancestors()
         existingEvent = ancestor._batman?.events?[key]
         break if existingEvent
       if createEvent || existingEvent?.oneShot
         events = @_batman.events ||= {}
+        eventClass = @eventClass or Batman.Event
         newEvent = events[key] = new eventClass(this, key)
         newEvent.oneShot = existingEvent?.oneShot
         newEvent

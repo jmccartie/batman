@@ -82,3 +82,19 @@ test "it should allow observation via the class", ->
   equal a.callCount, 1
   @obj2.set("foo", "qux")
   equal a.callCount, 2
+
+test 'it should allow observation via multiple subclasses', ->
+  a = createSpy()
+  class Custom extends Batman.Object
+    @observeAll 'foo', a
+
+  class CustomL1 extends Custom
+  class CustomL2 extends CustomL1
+
+  obj = new CustomL1
+  obj2 = new CustomL2
+  obj.set('foo', 'baz')
+  equal a.callCount, 1
+  obj2.set('foo', 'baz')
+  equal a.callCount, 2
+
