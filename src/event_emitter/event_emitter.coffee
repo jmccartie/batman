@@ -9,12 +9,17 @@ Batman.EventEmitter =
     if @_batman.events?.hasOwnProperty(key)
       @_batman.events[key]
     else
-      for ancestor in @_batman.ancestors()
-        existingEvent = ancestor._batman?.events?[key]
-        break if existingEvent
+      existingEvent = @_ancestorEvents?[key]
+      if !existingEvent
+        for ancestor in @_batman.ancestors()
+          if existingEvent = ancestor._batman?.events?[key]
+            @_ancestorEvents ||= {}
+            @_ancestorEvents[key] = existingEvent
+            break
       if createEvent || existingEvent?.oneShot
         events = @_batman.events ||= {}
         eventClass = @eventClass or Batman.Event
+        @_ancestorEvents?[key] = undefined
         newEvent = events[key] = new eventClass(this, key)
         newEvent.oneShot = existingEvent?.oneShot
         newEvent

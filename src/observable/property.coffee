@@ -58,23 +58,25 @@ class Batman.Property
     @hashKey = -> key
     key = "<Batman.Property base: #{Batman.Hash::hashKeyFor(@base)}, key: \"#{Batman.Hash::hashKeyFor(@key)}\">"
   event: (key, createEvent = true) ->
-    if event = @events?[key]
-      event
-    else
-      ancestors = @base._batman?.ancestors()
-      if ancestors
-        for ancestor in @base._batman?.ancestors()
-          existingEvent = ancestor._batman?.properties?.get(this.key)?.events?[key]
-          break if existingEvent
+    return event if event = @events?[key]
 
-      if createEvent || existingEvent?.oneShot
-        @events ||= {}
-        eventClass = @eventClass or Batman.Event
-        @events[key] = new eventClass(this, key)
-        @events[key].oneShot = existingEvent?.oneShot
-        @events[key]
-      else
-        existingEvent
+    existingEvent = @_ancestorEvents?[key]
+    if @base._batman?.ancestors() && !existingEvent
+      for ancestor in @base._batman?.ancestors()
+        if existingEvent = ancestor._batman?.properties?.get(this.key)?.events?[key]
+          @_ancestorEvents ||= {}
+          @_ancestorEvents[key] = existingEvent
+          break
+
+    if createEvent || existingEvent?.oneShot
+      eventClass = @eventClass or Batman.Event
+      @events ||= {}
+      @_ancestorEvents?[key] = undefined
+      @events[key] = new eventClass(this, key)
+      @events[key].oneShot = existingEvent?.oneShot
+      @events[key]
+    else
+      existingEvent
 
   changeEvent: (createEvent = true) ->
     if event = @event('change', createEvent)
