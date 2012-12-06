@@ -206,7 +206,9 @@ class Batman.Property
     @base._batman?.properties?.unset(@key)
     @isDead = true
 
-  fire: -> @changeEvent(false)?.fireWithContext(@base, arguments..., @key)
+  fire: (args...) ->
+    args.push(@key)
+    @changeEvent(false)?.fireWithContext(@base, args)
 
   isolate: ->
     if @_isolationCount is 0
