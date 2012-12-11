@@ -396,3 +396,7 @@ test "ValidationError should get full message", ->
 test "ValidationError should humanize attribute in the full message", ->
   error = new Batman.ValidationError("fooBarBaz", "isn't valid")
   equal error.get('fullMessage'), "Foo bar baz isn't valid"
+
+test "ValidationError should singularize associated attribute in the full message", ->
+  error = new Batman.ValidationError("emails.address", "isn't valid")
+  equal error.get('fullMessage'), "Email address isn't valid"
